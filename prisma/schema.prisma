@@ -1,0 +1,362 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum QuestionType {
+  YES_NO
+  SHORT_TEXT
+  LONG_TEXT
+  MULTIPLE_CHOICE
+  NUMBER
+  DATE
+  EMAIL
+  PHONE
+}
+
+enum USState {
+  AL // Alabama
+  AK // Alaska
+  AZ // Arizona
+  AR // Arkansas
+  CA // California
+  CO // Colorado
+  CT // Connecticut
+  DE // Delaware
+  FL // Florida
+  GA // Georgia
+  HI // Hawaii
+  ID // Idaho
+  IL // Illinois
+  IN // Indiana
+  IA // Iowa
+  KS // Kansas
+  KY // Kentucky
+  LA // Louisiana
+  ME // Maine
+  MD // Maryland
+  MA // Massachusetts
+  MI // Michigan
+  MN // Minnesota
+  MS // Mississippi
+  MO // Missouri
+  MT // Montana
+  NE // Nebraska
+  NV // Nevada
+  NH // New Hampshire
+  NJ // New Jersey
+  NM // New Mexico
+  NY // New York
+  NC // North Carolina
+  ND // North Dakota
+  OH // Ohio
+  OK // Oklahoma
+  OR // Oregon
+  PA // Pennsylvania
+  RI // Rhode Island
+  SC // South Carolina
+  SD // South Dakota
+  TN // Tennessee
+  TX // Texas
+  UT // Utah
+  VT // Vermont
+  VA // Virginia
+  WA // Washington
+  WV // West Virginia
+  WI // Wisconsin
+  WY // Wyoming
+  DC // District of Columbia
+}
+
+enum RoutingMethod {
+  ROUND_ROBIN
+  WEIGHTED
+  PRIORITY
+  MANUAL
+}
+
+enum LeadStatus {
+  PENDING
+  ASSIGNED
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+  CONVERTED
+}
+
+enum AgentStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum UserRole {
+  AGENT
+  ADMIN
+}
+
+enum QuestionCategory {
+  CORE // Locked, mandatory for compliance
+  OPTIONAL // System-wide optional questions
+  CUSTOM // Agent-created questions
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model Agent {
+  id        String      @id @default(cuid())
+  email     String      @unique
+  password  String // Hashed password
+  firstName String
+  lastName  String
+  status    AgentStatus @default(ACTIVE)
+  role      UserRole    @default(AGENT)
+
+  // Relations
+  profile          AgentProfile?
+  licenses         AgentLicense[]
+  leads            Lead[]
+  questionSettings AgentQuestionSetting[]
+  customQuestions  CustomQuestion[]
+  routingLogs      RoutingLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+}
+
+model AgentLicense {
+  id             String    @id @default(cuid())
+  agentId        String
+  state          USState
+  licenseNumber  String?
+  expirationDate DateTime?
+  verified       Boolean   @default(false)
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agentId, state])
+  @@index([agentId])
+  @@index([state])
+}
+
+model AgentProfile {
+  id      String  @id @default(cuid())
+  agentId String  @unique
+  photo   String? // URL or path to photo
+  bio     String?
+  title   String?
+  phone   String?
+  email   String?
+  website String?
+
+  // Social links stored as JSON
+  socialLinks Json? // { linkedin?: string, facebook?: string, twitter?: string, instagram?: string }
+
+  // Branding
+  primaryColor   String?
+  secondaryColor String?
+  accentColor    String?
+  theme          String? // Theme name or identifier
+  layoutTemplate String? @default("default") // Layout template identifier
+
+  // Content
+  testimonials Json? // Array of { name: string, text: string, rating?: number }
+  badges       Json? // Array of { name: string, image?: string, url?: string }
+  credentials  Json? // Array of { name: string, issuer?: string, year?: number }
+
+  // Calendar integration
+  calendlyUrl       String?
+  googleCalendarUrl String?
+  customCalendarUrl String?
+
+  // Media
+  introVideoUrl  String?
+  brochurePdfUrl String?
+
+  // Thank you message
+  thankYouMessage String?
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agentId])
+}
+
+model Question {
+  id       String           @id @default(cuid())
+  key      String           @unique // Unique identifier (e.g., "first_name", "tobacco_use")
+  label    String // Display label
+  type     QuestionType
+  category QuestionCategory
+  required Boolean          @default(false)
+  order    Int              @default(0) // Global order for core/optional questions
+
+  // For multiple choice questions
+  options Json? // Array of { value: string, label: string }
+
+  // Validation rules
+  validation Json? // { min?: number, max?: number, pattern?: string, etc. }
+
+  // Help text
+  helpText    String?
+  placeholder String?
+
+  // Relations
+  agentSettings AgentQuestionSetting[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([order])
+}
+
+model AgentQuestionSetting {
+  id         String @id @default(cuid())
+  agentId    String
+  questionId String
+
+  // Agent-specific overrides
+  enabled  Boolean  @default(true)
+  required Boolean? // null = use question default
+  order    Int      @default(0) // Agent-specific order
+
+  // Custom label override
+  customLabel String?
+
+  agent    Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agentId, questionId])
+  @@index([agentId])
+  @@index([questionId])
+}
+
+model CustomQuestion {
+  id       String       @id @default(cuid())
+  agentId  String
+  key      String // Unique identifier for this agent's custom question
+  label    String
+  type     QuestionType
+  required Boolean      @default(false)
+  order    Int          @default(0)
+
+  // For multiple choice questions
+  options Json? // Array of { value: string, label: string }
+
+  // Validation rules
+  validation Json?
+
+  // Help text
+  helpText    String?
+  placeholder String?
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agentId, key])
+  @@index([agentId])
+  @@index([order])
+}
+
+model Lead {
+  id String @id @default(cuid())
+
+  // Mandatory fields (locked for compliance)
+  firstName               String
+  lastName                String
+  phone                   String
+  email                   String
+  zip                     String
+  state                   USState
+  dob                     DateTime
+  tobaccoUse              Boolean
+  coverageStartPreference String? // e.g., "immediately", "next_month", "specific_date"
+  peopleNeedingCoverage   Int      @default(1)
+
+  // Optional fields (agent configurable)
+  gender                 String?
+  householdIncome        String?
+  currentCoverage        String?
+  deductiblePreference   String?
+  carrierPreference      String?
+  dentalVisionPreference String?
+  medications            String?
+  employmentStatus       String?
+
+  // Custom question answers stored as JSON
+  customAnswers Json? // { [questionKey]: answer }
+
+  // Routing
+  agentId String?
+  status  LeadStatus @default(PENDING)
+
+  // Relations
+  agent      Agent?      @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  routingLog RoutingLog?
+
+  submittedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([agentId])
+  @@index([state])
+  @@index([status])
+  @@index([submittedAt])
+  @@index([email])
+}
+
+model RoutingLog {
+  id      String  @id @default(cuid())
+  leadId  String  @unique
+  agentId String?
+
+  // Routing details
+  method          RoutingMethod
+  state           USState
+  eligibleAgents  Json? // Array of agent IDs that were eligible
+  selectedAgentId String? // The agent that was selected
+  routingRules    Json? // The rules that were applied
+
+  // Metadata
+  processingTimeMs Int? // How long routing took
+  notes            String?
+
+  // Relations
+  lead  Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  agent Agent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+  @@index([agentId])
+  @@index([state])
+  @@index([method])
+  @@index([createdAt])
+}

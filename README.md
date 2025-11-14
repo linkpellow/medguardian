@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Meduardian.net - Insurance Lead Collection System
+
+A multi-agent insurance lead collection platform with dynamic forms, intelligent routing, and agent dashboards.
+
+## Features
+
+- **Dynamic Multi-Step Forms** - Agent-customizable form builder
+- **Intelligent Lead Routing** - State-based routing with multiple strategies
+- **Agent Landing Pages** - Branded, personalized pages for each agent
+- **Agent Dashboard** - Profile and form customization
+- **Admin Panel** - Platform management and oversight
+- **Notifications** - Email and SMS alerts (Telnyx ready)
+- **Analytics** - Event tracking for insights
+
+## Tech Stack
+
+- **Next.js 14** - App Router
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+- **Prisma** - Database ORM
+- **PostgreSQL** - Database
+- **React Hook Form** - Form management
+- **Zod** - Validation
+- **shadcn/ui** - UI components
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 18+
+- PostgreSQL database
+- npm or yarn
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Update `DATABASE_URL` with your PostgreSQL connection string.
 
-## Learn More
+4. Run database migrations:
+   ```bash
+   npm run db:migrate
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+5. Seed the database:
+   ```bash
+   npm run db:seed
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+6. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Color Scheme
 
-## Deploy on Vercel
+- **Navy Trust** (#0B294B) - Primary
+- **Ivory White** (#FAFAF9) - Background
+- **Warm Sky Blue** (#7AB8FF) - Accent
+- **Muted Aqua** (#77E0C1) - Accent
+- **Soft Stone** (#BFC7D1) - Neutral
+- **Deep Charcoal** (#333A42) - Text
+- **Golden Assurance** (#F5C242) - CTA
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Testing the Full Journey
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Access Form**: `/form?agentId={agent-id}`
+2. **Fill Form**: Complete all steps
+3. **Submit**: Lead is routed and agent is notified
+4. **Redirect**: User redirected to agent landing page
+5. **Agent Dashboard**: `/dashboard` (login required)
+6. **Admin Panel**: `/admin` (admin login required)
+
+## API Routes
+
+- `/api/form/questions?agentId=xyz` - Get form questions
+- `/api/lead/submit` - Submit lead
+- `/api/agent/[slug]` - Get agent profile
+- `/api/agent/profile` - Update agent profile
+- `/api/agent/form-settings` - Update form settings
+- `/api/admin/*` - Admin operations
+
+## Database Schema
+
+See `prisma/schema.prisma` for complete schema documentation.
+
+## Notifications
+
+The notification system is ready for Telnyx integration. Update `lib/notifications.ts` with your Telnyx API credentials.
+
+## Analytics
+
+Analytics events are tracked and ready for integration with Google Analytics, Mixpanel, etc. Update `lib/analytics.ts` to connect your analytics service.
+
+## License
+
+Private - All rights reserved
