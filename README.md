@@ -31,7 +31,7 @@ A multi-agent insurance lead collection platform with dynamic forms, intelligent
 - PostgreSQL database
 - npm or yarn
 
-### Installation
+### Local Development
 
 1. Clone the repository
 2. Install dependencies:
@@ -59,6 +59,27 @@ A multi-agent insurance lead collection platform with dynamic forms, intelligent
    ```bash
    npm run dev
    ```
+
+### Production Deployment (Vercel)
+
+**Quick Setup:**
+1. **Set up Database** (choose one):
+   - Vercel Postgres: Storage tab → Create Database
+   - Supabase: https://supabase.com (free tier available)
+   - Neon: https://neon.tech (serverless Postgres)
+   
+2. **Run Setup Script:**
+```bash
+./setup-production.sh "your-database-connection-string"
+```
+
+3. **Configure Vercel Environment Variables:**
+   - Go to Vercel Dashboard → Settings → Environment Variables
+   - Add: `DATABASE_URL`, `NEXT_PUBLIC_APP_URL`, `NODE_ENV`
+
+4. **Redeploy** your application
+
+📖 **Full setup guide:** See [VERCEL_SETUP.md](./VERCEL_SETUP.md) for detailed instructions.
 
 ## Color Scheme
 
